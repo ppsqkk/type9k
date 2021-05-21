@@ -30,10 +30,12 @@ const char *prog_name(void)
  * Just like vprintf, but also prints prog_name(). Error string printing with
  * strerror(errno) is enabled if x != 0.
  *
- * Returns 0 on success, 1 on stream error.
+ * Returns 0 on success, or 1 on error.
  */
 int vxprintf(int x, const char *fmt, va_list args)
 {
+	if (fmt == NULL)
+		return 1;
 	fprintf(stderr, "%s: ", prog_name());
 	vfprintf(stderr, fmt, args);
 	if (x)
@@ -58,7 +60,7 @@ int xprintf(int x, const char *fmt, ...)
 
 /*
  * Error message printing with vxprintf. Exits the entire program with 1 on
- * success, 2 on stream error.
+ * success, or 2 on error.
  */
 void eprintf(int x, const char *fmt, ...)
 {

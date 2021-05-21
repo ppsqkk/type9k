@@ -4,5 +4,6 @@
 void init(void);
 void end_file(void);
 void end_vector(void);
+void end_curses(void);
 
 #endif

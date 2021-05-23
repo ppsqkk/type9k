@@ -1,7 +1,9 @@
 #include <stdarg.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 
 #include <ncurses.h>
 
@@ -18,6 +20,15 @@ static struct vector_vc *buf;
 int main(int argc, char **argv)
 {
 	size_t i, j;
+	size_t prev_i, prev_j;
+
+	size_t total, errors;
+	double acc;
+
+	int has_typed;
+	time_t start, end;
+	double cpm;
+
 	int c;
 	int ret;
 
@@ -31,24 +42,77 @@ int main(int argc, char **argv)
 	init();
 
 	i = j = 0;
-	c = '\0';
-	ret = 1;
-	do {
-		/* TODO: Key processing */
-		if (c == 'q')
-			break;
+	total = errors = 0;
+	has_typed = 0;
+	start = -1;
+	next_page(&i, &j, &prev_i, &prev_j);
 
-		/* If we haven't reached the end */
-		if (ret != 0) {
-			clear();
-			ret = wvector_vc_dump(stdscr, buf, i, j, &i, &j);
-			if (ret == 2)
-				eprintf(0, "couldn't print to window");
-			refresh();
+	while ((c = getch()) != ERR) {
+		if (!has_typed) {
+			has_typed = 1;
+			if ((start = time(NULL)) == -1)
+				eprintf(0, "couldn't get time");
 		}
-	} while ((c = getch()) != ERR);
+		total++;
+		/* If the right key was pressed */
+		if (c == buf->dat[prev_i]->dat[prev_j]) {
+			if (attron(A_BOLD) == ERR)
+				eprintf(0, "couldn't turn attribute on");
+			if (wpc(stdscr, c) == 2)
+				eprintf(0, "couldn't print to window");
+			if (attroff(A_BOLD) == ERR)
+				eprintf(0, "couldn't turn attribute off");
+			/* Increment to the next character in buf */
+			if (prev_j >= buf->dat[prev_i]->cur - 1) {
+				prev_i++;
+				prev_j = 0;
+			} else {
+				prev_j++;
+			}
+			if (refresh() == ERR)
+				eprintf(0, "couldn't refresh window");
+		} else {
+			errors++;
+		}
+		/* If we need to print the next page */
+		if (prev_i > i || (prev_i == i && prev_j >= j)) {
+			ret = next_page(&i, &j, &prev_i, &prev_j);
+			/* If there is no page left to print */
+			if (ret == 0)
+				break;
+		}
+	}
+	if (c == ERR)
+		eprintf(0, "couldn't read input");
+	if ((end = time(NULL)) == -1)
+		eprintf(0, "couldn't get time");
+
+	/* Floating point overflow not checked */
+	cpm = total / (difftime(end, start) / 60);
+	acc = (total - errors) / (double) total * 100;
+	if (printw("cpm: %g\nacc: %g%%", cpm, acc) == ERR)
+		eprintf(0, "couldn't print to window");
+	getch();
 
 	exit(0);
+}
+
+int next_page(size_t *i, size_t *j, size_t *prev_i, size_t *prev_j)
+{
+	int ret;
+
+	*prev_i = *i;
+	*prev_j = *j;
+	if (clear() == ERR)
+		eprintf(0, "couldn't clear window");
+	ret = wvector_vc_dump(stdscr, buf, *i, *j, i, j);
+	if (ret == 2)
+		eprintf(0, "couldn't print to window");
+	if (refresh() == ERR)
+		eprintf(0, "couldn't refresh window");
+	if (move(0, 0) == ERR)
+		eprintf(0, "couldn't move cursor");
+	return ret;
 }
 
 void init(void)
@@ -72,6 +136,9 @@ void init(void)
 		if (vector_vc_add(buf, line) == 1)
 			eprintf(0, "couldn't add line");
 	} while (read_line(line, fp) == 0);
+	/* Last one was a fluke; destroy it */
+	vector_char_destroy(line);
+	buf->cur--;
 
 	/* Initialize curses */
 	initscr();	/* Doesn't return */

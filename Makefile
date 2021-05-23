@@ -6,15 +6,15 @@ CC = gcc
 CFLAGS = -D_GNU_SOURCE -std=c99 -pedantic -Wall -g -O2
 LDLIBS = -lncurses
 
-type9k: type9k.o efn.o vector.o vhelp.o curse.o
-	$(CC) $(CFLAGS) -o $@ type9k.o efn.o vector.o vhelp.o curse.o $(LDLIBS)
+type9k: curse.o efn.o type9k.o vector.o vhelp.o
+	$(CC) $(CFLAGS) -o $@ curse.o efn.o type9k.o vector.o vhelp.o $(LDLIBS)
 
-type9k.o: type9k.c type9k.h efn.h
+type9k.o: type9k.c curse.h efn.h type9k.h vector.h vhelp.h
 
 efn.o: efn.c efn.h
 
 vector.o: vector.c vector.h
-vector.c: vtmpl.c vector.h
+vector.c: vtmpl.c
 	touch vector.c
 vector.h: vtmpl.h
 	touch vector.h

@@ -1,5 +1,3 @@
-#include <stdio.h>
-
 #include "vector.h"
 #include "vhelp.h"
 

@@ -9,7 +9,7 @@ LDLIBS = -lncurses
 type9k: curse.o efn.o type9k.o vector.o vhelp.o
 	$(CC) $(CFLAGS) -o $@ curse.o efn.o type9k.o vector.o vhelp.o $(LDLIBS)
 
-type9k.o: type9k.c curse.h efn.h type9k.h vector.h vhelp.h
+type9k.o: type9k.c curse.h efn.h vector.h vhelp.h
 
 efn.o: efn.c efn.h
 

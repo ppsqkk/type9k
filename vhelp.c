@@ -10,7 +10,7 @@ int read_line(struct vector_char *v, FILE *fp)
 {
 	int c;
 
-	if (v == NULL)
+	if (v == NULL || fp == NULL)
 		return 1;
 	while ((c = fgetc(fp)) != EOF) {
 		if (vector_char_add(v, c) == 1)

@@ -52,6 +52,8 @@ struct VNAME *RENAME(VNAME, init)(void)
 /* Returns 0 on success, or 1 on error. */
 int RENAME(VNAME, add)(struct VNAME *v, TYPE new)
 {
+	if (v == NULL)
+		return 1;
 	if (v->cur >= v->max) {
 		if (v->max > SIZE_MAX / sizeof(v->dat[0]) / VGROW ||
 		    (v->dat = realloc(v->dat, v->max * sizeof(v->dat[0]) * VGROW)) == NULL)
@@ -65,6 +67,8 @@ int RENAME(VNAME, add)(struct VNAME *v, TYPE new)
 /* Always destroy a vector after using it. */
 void RENAME(VNAME, destroy)(struct VNAME *v)
 {
+	if (v == NULL)
+		return;
 	free(v->dat);
 	free(v);
 }

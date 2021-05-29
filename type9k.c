@@ -25,7 +25,7 @@ int main(int argc, char **argv)
 	size_t ei, ej;		/* Marks the end of the page */
 	int consec_space;	/* Boolean: if we are in a run of spaces */
 
-	size_t total, errors;
+	size_t errors, nerrors;
 	double acc;
 
 	int has_typed;
@@ -43,7 +43,7 @@ int main(int argc, char **argv)
 
 	ei = ej = 0;
 	consec_space = 1;	/* Skip leading whitespace by pretending to be in a run of spaces */
-	total = errors = 0;
+	errors = nerrors = 0;
 	has_typed = 0;
 	start = -1;
 	for (;;) {
@@ -74,13 +74,14 @@ int main(int argc, char **argv)
 					eprintf(0, "couldn't print to window");
 			} else {
 				int c;
+				size_t consec_error;
 
 				if (isspace(cur))
 					consec_space = 1;
 				else
 					consec_space = 0;
 
-				/* While c is the wrong character */
+				consec_error = 0;
 				for (;;) {
 					if ((c = getch()) == ERR)
 						eprintf(0, "couldn't read input");
@@ -89,10 +90,25 @@ int main(int argc, char **argv)
 						if ((start = time(NULL)) == -1)
 							eprintf(0, "couldn't get time");
 					}
-					if (c == cur || (isspace(cur) && isspace(c)))
+
+					if (c == KEY_BACKSPACE || c == 127) {
+						if (consec_error > 0)
+							consec_error--;
+						if (consec_error == 0)
+							if (curs_set(1) == ERR)
+								eprintf(0, "couldn't set cursor state");
+						continue;
+					}
+
+					if (consec_error == 0 && (c == cur || (isspace(cur) && isspace(c)))) {
+						nerrors++;
 						break;
+					}
+
+					if (curs_set(0) == ERR)
+						eprintf(0, "couldn't set cursor state");
+					consec_error++;
 					errors++;
-					total++;
 				}
 
 				/* c is the correct character */
@@ -115,7 +131,6 @@ int main(int argc, char **argv)
 			} else {
 				ij++;
 			}
-			total++;
 		}
 
 		/* Cleanup */
@@ -132,9 +147,10 @@ int main(int argc, char **argv)
 	if ((end = time(NULL)) == -1)
 		eprintf(0, "couldn't get time");
 
+	fprintf(stderr, "%zu %zu\n", nerrors, errors);
 	/* Floating point overflow not checked */
-	cpm = total / (difftime(end, start) / 60);
-	acc = (total - errors) / (double) total * 100;
+	cpm = nerrors / (difftime(end, start) / 60);
+	acc = nerrors / (double) (nerrors + errors) * 100;
 	if (printw("cpm: %g\nacc: %g%%", cpm, acc) == ERR)
 		eprintf(0, "couldn't print to window");
 	if (refresh() == ERR)

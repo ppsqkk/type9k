@@ -55,9 +55,11 @@ int RENAME(VNAME, add)(struct VNAME *v, TYPE new)
 	if (v == NULL)
 		return 1;
 	if (v->cur >= v->max) {
-		if (v->max > SIZE_MAX / sizeof(v->dat[0]) / VGROW ||
-		    (v->dat = realloc(v->dat, v->max * sizeof(v->dat[0]) * VGROW)) == NULL)
-		return 1;
+		if (v->max > SIZE_MAX / sizeof(v->dat[0]) / VGROW)
+			return 1;
+		v->dat = realloc(v->dat, v->max * sizeof(v->dat[0]) * VGROW);
+		if (v->dat == NULL)
+			return 1;
 		v->max *= VGROW;
 	}
 	v->dat[v->cur++] = new;

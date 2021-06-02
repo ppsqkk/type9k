@@ -26,7 +26,8 @@ int wpc(WINDOW *w, char c)
 	getyx(w, cur_row, cur_col);
 
 	/* We are on the last row and we need to move to the next */
-	if (cur_row >= win_height - 1 && (c == '\n' || cur_col >= win_width - 1))
+	if (cur_row >= win_height - 1 &&
+	    (c == '\n' || cur_col >= win_width - 1))
 		return 1;
 
 	/* We need to wrap */

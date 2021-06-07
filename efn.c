@@ -39,7 +39,7 @@ int vxprintf(int x, const char *fmt, va_list args)
 	fprintf(stderr, "%s: ", prog_name());
 	vfprintf(stderr, fmt, args);
 	if (x)
-		fprintf(stderr, " %s", strerror(errno));
+		fprintf(stderr, ": %s", strerror(errno));
 	fprintf(stderr, "\n");
 	if (fflush(NULL) == EOF || ferror(stderr))
 		return 1;

@@ -16,6 +16,7 @@ static int next_page(WINDOW *w, const struct vector_vc *v, size_t ii, size_t ij,
 		     size_t *ei, size_t *ej);
 static void wait_page(WINDOW *w, const struct vector_vc *v,
 		      size_t ii, size_t ij, size_t ei, size_t ej);
+void get_until_match(WINDOW *w, char cur);
 void print_results(WINDOW *w);
 
 static char *filename;
@@ -55,6 +56,15 @@ int main(int argc, char **argv)
 
 		wait_page(w, buf, ii, ij, ei, ej);
 
+		/* Simulate a newline paging the window */
+		if (ret != 0 && buf->dat[ei]->dat[ej] == '\n') {
+			if (ej != 0)
+				get_until_match(w, '\n');
+			ei++;
+			ej = 0;
+			consec_space = 1;
+		}
+
 		if (wclear(w) == ERR)
 			eprintf(0, "couldn't clear window");
 
@@ -66,7 +76,7 @@ int main(int argc, char **argv)
 	if (wmove(w, 0, 0) == ERR)
 		eprintf(0, "couldn't move cursor");
 	if ((end = time(NULL)) == -1)
-		eprintf(0, "couldn't get time");
+		eprintf(1, "couldn't get time");
 
 	print_results(w);
 	wgetch(w);
@@ -129,8 +139,6 @@ int next_page(WINDOW *w, const struct vector_vc *v, size_t ii, size_t ij,
 void wait_page(WINDOW *w, const struct vector_vc *v, size_t ii, size_t ij,
                      size_t ei, size_t ej)
 {
-	extern void get_until_match(WINDOW *w, char cur);
-
 	while (ii < ei || ij < ej) {
 		int cur;
 
@@ -188,7 +196,7 @@ void get_until_match(WINDOW *w, char cur) {
 		if (!has_typed) {
 			has_typed = 1;
 			if ((start = time(NULL)) == -1)
-				eprintf(0, "couldn't get time");
+				eprintf(1, "couldn't get time");
 		}
 
 		if (c == KEY_BACKSPACE || c == 127) {
